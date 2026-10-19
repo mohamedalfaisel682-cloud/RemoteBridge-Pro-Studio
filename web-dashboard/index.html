@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="overflow-x-hidden">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RemoteBridge Pro - لوحة المتابعة والتحكم المتقدمة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Tajawal', sans-serif;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.88);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(16, 185, 129, 0.8);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col custom-scrollbar selection:bg-emerald-500 selection:text-slate-950 overflow-x-hidden">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900/90 border-b border-slate-800/80 px-3 md:px-6 py-2.5 sticky top-0 z-40 backdrop-blur flex justify-between items-center shadow-lg w-full">
+        <div class="flex items-center gap-2.5">
+            <div class="relative flex items-center justify-center">
+                <div class="w-3 h-3 bg-emerald-500 rounded-full" id="connection-indicator"></div>
+                <div class="w-3 h-3 bg-emerald-500 rounded-full absolute animate-ping opacity-75" id="connection-pulse"></div>
+            </div>
+            <div>
+                <h1 class="text-base md:text-xl font-black tracking-wide text-emerald-400 flex items-center gap-1.5">
+                    RemoteBridge <span class="text-[9px] uppercase font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded-full">Pro</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 hidden sm:block">جسر الربط والمتابعة المباشر عبر WebRTC</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-4">
+            <div class="hidden sm:flex flex-col items-end text-[11px]">
+                <span id="status-text" class="font-bold text-amber-400">غير متصل</span>
+                <span id="ping-text" class="text-slate-500 font-mono">--ms</span>
+            </div>
+            
+            <button onclick="toggleServerConnection()" id="connect-btn" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                <span>⚡ اتصال بخادم الإشارات</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Mobile Horizontal Tabs Navigation (Visually Optimized for Phones) -->
+    <div class="md:hidden bg-slate-900/95 border-b border-slate-800 px-2 py-2 overflow-x-auto no-scrollbar flex items-center gap-1.5 sticky top-[53px] z-30 shadow-md">
+        <button onclick="switchTab('dashboard')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap bg-emerald-600/20 text-emerald-400 border border-emerald-500/30">📊 الرئيسية</button>
+        <button onclick="switchTab('files')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">📁 الملفات والذاكرة</button>
+        <button onclick="switchTab('camera')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">📹 البث الحي</button>
+        <button onclick="switchTab('contacts')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">📇 الأسماء</button>
+        <button onclick="switchTab('sms')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">💬 الرسائل</button>
+        <button onclick="switchTab('calls')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">📞 المكالمات</button>
+        <button onclick="switchTab('notifications')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">🔔 الإشعارات</button>
+        <button onclick="switchTab('settings')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap text-slate-300 bg-slate-800/60">⚙️ الإعدادات</button>
+    </div>
+
+    <!-- Main Content Layout (Desktop Grid / Mobile Full Width) -->
+    <main class="flex-1 p-2.5 md:p-6 max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-4 gap-4 overflow-x-hidden">
+        
+        <!-- Desktop Sidebar (Hidden on Mobile to fit screen height & width) -->
+        <aside class="hidden md:flex flex-col gap-4">
+            <nav class="glass-panel rounded-2xl p-2.5 flex flex-col gap-1 shadow-xl">
+                <div class="px-3 py-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">القوائم والأقسام</div>
+                <button onclick="switchTab('dashboard')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl bg-emerald-600/20 text-emerald-400 font-bold transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">📊 لوحة النظام الرئيسية</span>
+                </button>
+                <button onclick="switchTab('files')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">📁 مستكشف ملفات وذاكرة الهاتف</span>
+                </button>
+                <button onclick="switchTab('camera')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">📹 البث الحي للكاميرا والصوت</span>
+                </button>
+                <button onclick="switchTab('contacts')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">📇 الأسماء وجهات الاتصال</span>
+                </button>
+                <button onclick="switchTab('sms')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">💬 الرسائل القصيرة (SMS)</span>
+                </button>
+                <button onclick="switchTab('calls')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">📞 سجل المكالمات</span>
+                </button>
+                <button onclick="switchTab('notifications')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">🔔 الإشعارات الحية</span>
+                </button>
+                <button onclick="switchTab('settings')" class="tab-btn w-full text-right px-3.5 py-2.5 rounded-xl hover:bg-slate-800/80 text-slate-300 font-medium transition flex items-center justify-between group">
+                    <span class="flex items-center gap-2.5 text-xs">⚙️ الإعدادات والبروفايلات</span>
+                </button>
+            </nav>
+
+            <!-- Desktop Host Selection -->
+            <div class="glass-panel rounded-2xl p-3.5 shadow-xl border border-slate-800">
+                <h3 class="text-xs font-bold text-slate-300 mb-2 flex items-center justify-between">
+                    <span>📱 الأجهزة المتاحة (Hosts)</span>
+                    <button onclick="autoDiscoverAndConnectHosts()" class="text-[10px] text-emerald-400 hover:underline font-bold">🔍 فحص تلقائي</button>
+                </h3>
+                
+                <div class="space-y-1 mb-2.5 max-h-32 overflow-y-auto custom-scrollbar" id="hosts-list">
+                    <div class="text-[10px] text-slate-500 text-center py-2 bg-slate-900/40 rounded-xl border border-slate-800">
+                        لم يتم اكتشاف أجهزة مضيفة بعد.
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800/80">
+                    <label class="block text-[10px] font-semibold text-slate-400 mb-1">المعرف المستهدف:</label>
+                    <div class="flex gap-1">
+                        <input type="text" id="target-device-id" oninput="autoSaveInputs()" placeholder="host-xxxx..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500">
+                        <button onclick="saveCurrentTargetProfile()" title="حفظ بالمفضلة" class="bg-slate-800 text-amber-400 px-2 py-1 rounded-lg text-xs">⭐</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 mt-2">
+                        <button onclick="connectToSelectedHost()" class="bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/30 py-1.5 rounded-lg text-xs font-bold transition">
+                            🔗 ربط WebRTC
+                        </button>
+                        <button onclick="autoDiscoverAndConnectHosts()" class="bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 border border-purple-500/30 py-1.5 rounded-lg text-xs font-bold transition">
+                            🔍 تنقيب تلقائي
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Display Screen Panel (Fits Phone Screen Perfectly) -->
+        <section class="md:col-span-3 glass-panel rounded-2xl p-3.5 md:p-6 shadow-2xl flex flex-col border border-slate-800/80 relative w-full overflow-x-hidden min-h-[500px]">
+            <div id="panel-content" class="flex-1 flex flex-col w-full overflow-x-hidden">
+                <!-- Dynamically populated by switchTab -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 left-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Image / File Preview Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-3">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-4 max-w-xl w-full flex flex-col gap-3 shadow-2xl relative">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h4 id="modal-title" class="font-bold text-slate-200 text-xs md:text-sm truncate">معاينة الملف</h4>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white bg-slate-800 rounded-lg w-7 h-7 flex items-center justify-center font-bold text-xs">✕</button>
+            </div>
+            <div class="flex items-center justify-center max-h-[50vh] overflow-hidden rounded-xl bg-slate-950 p-2">
+                <img id="modal-img" src="" alt="Preview" class="max-h-[45vh] object-contain">
+            </div>
+            <div class="flex justify-end gap-2 pt-1">
+                <a id="modal-download" href="#" download class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                    ⬇️ تنزيل الملف
+                </a>
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-semibold transition">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core JavaScript Architecture -->
+    <script>
+        // State Management
+        let ws = null;
+        let pc = null;
+        let dataChannel = null;
+        let myDeviceId = "pc-web-controller-" + Math.floor(1000 + Math.random() * 9000);
+        let pingInterval = null;
+        let lastPingTime = 0;
+        let activeTab = 'dashboard';
+        let onlineHosts = [];
+
+        // CLEAN DEFAULT DATA STORES (Zero Fake Items by Default)
+        let filesData = [];
+        let contactsData = [];
+        let smsData = [];
+        let callsData = [];
+        let notificationsData = [];
+
+        // Selection Stores for Single / Bulk Select All
+        let selectedFileIds = new Set();
+        let selectedContactIds = new Set();
+        let selectedSmsIds = new Set();
+        let selectedCallIds = new Set();
+        let selectedNotifIds = new Set();
+
+        // Streaming state
+        let streamState = {
+            active: false,
+            isFront: false,
+            audioEnabled: true
+        };
+
+        // Current Directory for File Explorer
+        let currentExplorerPath = "/";
+
+        // Preset Configurations
+        const PRESETS = {
+            render: "wss://remotebridge.onrender.com/ws",
+            fly: "wss://my-ai-bridge-app.fly.dev/ws",
+            local: "ws://localhost:10000/ws"
+        };
+
+        const DEFAULT_CONFIG = {
+            serverUrl: PRESETS.render,
+            deviceName: "لوحة تحكم الويب (Web Dashboard)",
+            targetDeviceId: "",
+            stunServer: "stun:stun.l.google.com:19302"
+        };
+
+        let appConfig = JSON.parse(localStorage.getItem('remotebridge_config')) || DEFAULT_CONFIG;
+
+        // Auto Battery Refresh Interval
+        let batteryAutoRefreshTimer = null;
+
+        // Initialize App
+        document.addEventListener("DOMContentLoaded", () => {
+            const targetEl = document.getElementById("target-device-id");
+            if (targetEl && appConfig.targetDeviceId) targetEl.value = appConfig.targetDeviceId;
+            switchTab('dashboard');
+            // Auto connect signaling server & discover host
+            setTimeout(() => autoDiscoverAndConnectHosts(), 800);
+        });
+
+        function autoSaveInputs() {
+            const targetEl = document.getElementById("target-device-id");
+            if (targetEl) {
+                appConfig.targetDeviceId = targetEl.value.trim();
+                localStorage.setItem('remotebridge_config', JSON.stringify(appConfig));
+            }
+        }
+
+        // Toast Notification System
+        function showToast(message, type = "info") {
+            const container = document.getElementById("toast-container");
+            if (!container) return;
+            const toast = document.createElement("div");
+            const colors = {
+                info: "bg-slate-800 border-slate-700 text-slate-100",
+                success: "bg-emerald-950/90 border-emerald-500/40 text-emerald-200",
+                warning: "bg-amber-950/90 border-amber-500/40 text-amber-200",
+                error: "bg-rose-950/90 border-rose-500/40 text-rose-200"
+            };
+            toast.className = `p-3 rounded-xl border shadow-xl text-xs font-medium flex items-center justify-between gap-3 transition-all duration-300 pointer-events-auto transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white text-xs">✕</button>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove("translate-y-2", "opacity-0"), 10);
+            setTimeout(() => {
+                toast.classList.add("opacity-0", "translate-y-2");
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // WebSocket Signaling Connection
+        function toggleServerConnection() {
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+                ws.close();
+                return;
+            }
+
+            const url = appConfig.serverUrl || PRESETS.render;
+            const statusText = document.getElementById("status-text");
+            if (statusText) {
+                statusText.innerText = "جارٍ الاتصال...";
+                statusText.className = "font-bold text-amber-400";
+            }
+
+            try {
+                ws = new WebSocket(url);
+            } catch (err) {
+                showToast("فشل إنشاء اتصال WebSocket: " + err.message, "error");
+                return;
+            }
+
+            ws.onopen = function() {
+                updateConnectionUI(true, "متصل بالسيرفر");
+                showToast("تم الاتصال بنجاح بخادم الإشارات", "success");
+
+                ws.send(JSON.stringify({
+                    type: "register",
+                    deviceId: myDeviceId,
+                    role: "controller",
+                    deviceName: appConfig.deviceName
+                }));
+
+                startPing();
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const msg = JSON.parse(event.data);
+                    handleSignalingMessage(msg);
+                } catch (e) {
+                    console.error("Invalid JSON signaling msg:", event.data);
+                }
+            };
+
+            ws.onclose = function() {
+                updateConnectionUI(false, "منقطع عن الخادم");
+                showToast("انقطع الاتصال بخادم الإشارات", "warning");
+                stopPing();
+            };
+
+            ws.onerror = function() {
+                showToast("خطأ في الاتصال بالخادم", "error");
+            };
+        }
+
+        function updateConnectionUI(connected, statusMessage) {
+            const ind = document.getElementById("connection-indicator");
+            const pulse = document.getElementById("connection-pulse");
+            const btn = document.getElementById("connect-btn");
+            const statusText = document.getElementById("status-text");
+
+            if (statusText) statusText.innerText = statusMessage;
+
+            if (connected) {
+                if (ind) ind.className = "w-3 h-3 bg-emerald-400 rounded-full";
+                if (pulse) pulse.className = "w-3 h-3 bg-emerald-400 rounded-full absolute animate-ping opacity-75";
+                if (btn) {
+                    btn.className = "bg-rose-600 hover:bg-rose-500 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5";
+                    btn.innerHTML = "<span>🛑 قطع الاتصال</span>";
+                }
+                if (statusText) statusText.className = "font-bold text-emerald-400";
+            } else {
+                if (ind) ind.className = "w-3 h-3 bg-rose-500 rounded-full";
+                if (pulse) pulse.className = "hidden";
+                if (btn) {
+                    btn.className = "bg-emerald-600 hover:bg-emerald-500 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5";
+                    btn.innerHTML = "<span>⚡ اتصال بخادم الإشارات</span>";
+                }
+                if (statusText) statusText.className = "font-bold text-amber-400";
+            }
+        }
+
+        function startPing() {
+            stopPing();
+            pingInterval = setInterval(() => {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    lastPingTime = Date.now();
+                    ws.send(JSON.stringify({ type: "ping" }));
+                }
+            }, 10000);
+        }
+
+        function stopPing() {
+            if (pingInterval) clearInterval(pingInterval);
+        }
+
+        function handleSignalingMessage(msg) {
+            switch (msg.type) {
+                case "registered":
+                    showToast("تم تسجيل جهاز الويب كـ Controller بنجاح", "success");
+                    break;
+                case "hosts":
+                    onlineHosts = msg.hosts || [];
+                    renderHostList();
+                    break;
+                case "host_online":
+                    showToast(`جهاز مضيف متصل: ${msg.host.deviceName}`, "info");
+                    refreshHostList();
+                    break;
+                case "host_offline":
+                    showToast(`انقطع المضيف: ${msg.deviceId}`, "warning");
+                    refreshHostList();
+                    break;
+                case "pong":
+                    const latency = Date.now() - lastPingTime;
+                    const pingText = document.getElementById("ping-text");
+                    if (pingText) pingText.innerText = `${latency}ms`;
+                    break;
+                case "offer":
+                    handleRemoteOffer(msg);
+                    break;
+                case "answer":
+                    handleRemoteAnswer(msg);
+                    break;
+                case "ice":
+                    handleRemoteCandidate(msg);
+                    break;
+                case "rpc_response":
+                    handleRPCResponse({
+                        id: msg.requestId,
+                        ok: msg.ok,
+                        error: msg.error,
+                        data: msg.data
+                    });
+                    break;
+            }
+        }
+
+        function refreshHostList() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "register", deviceId: myDeviceId, role: "controller", deviceName: appConfig.deviceName }));
+            }
+        }
+
+        let autoDiscoveryIntervalId = null;
+
+        function autoDiscoverAndConnectHosts() {
+            showToast("تم تفعيل الفحص الدوري الآلي والبحث التلقائي عن الهواتف المضيفة (كل 3 ثوانٍ)...", "info");
+
+            // Execute scan immediately
+            performHostScan();
+
+            // Set up 3-second polling interval
+            if (!autoDiscoveryIntervalId) {
+                autoDiscoveryIntervalId = setInterval(() => {
+                    performHostScan();
+                }, 3000);
+            }
+        }
+
+        function performHostScan() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                toggleServerConnection();
+                return;
+            }
+
+            refreshHostList();
+
+            // Directly update UI when no host is available
+            if (!onlineHosts || onlineHosts.length === 0) {
+                renderHostList();
+            } else {
+                const targetEl = document.getElementById("target-device-id");
+                const currentTarget = targetEl ? targetEl.value.trim() : "";
+                const hostExists = onlineHosts.some(h => h.deviceId === currentTarget);
+
+                if (!currentTarget || !hostExists) {
+                    const firstHost = onlineHosts[0];
+                    selectHost(firstHost.deviceId);
+                    showToast(`تم اكتشاف المضيف [${firstHost.deviceName || firstHost.deviceId}] والربط به تلقائياً`, "success");
+                }
+            }
+        }
+
+        function renderHostList() {
+            const listEl = document.getElementById("hosts-list");
+            if (!listEl) return;
+
+            if (!onlineHosts || onlineHosts.length === 0) {
+                listEl.innerHTML = `<div class="text-[10px] text-slate-500 text-center py-2 bg-slate-900/40 rounded-xl border border-slate-800 animate-pulse">لا توجد أجهزة مضيفة أونلاين حالياً. جارٍ الفحص الدوري عبر السيرفر كل 3 ثوانٍ...</div>`;
+                return;
+            }
+
+            const targetEl = document.getElementById("target-device-id");
+            if (targetEl && (!targetEl.value || targetEl.value === "old-phone-01")) {
+                targetEl.value = onlineHosts[0].deviceId;
+                autoSaveInputs();
+                setTimeout(() => sendRPCCommand('device_info'), 500);
+            }
+
+            listEl.innerHTML = onlineHosts.map(h => `
+                <div onclick="selectHost('${h.deviceId}')" class="p-2 bg-slate-900/80 hover:bg-slate-800/90 border border-slate-700/60 rounded-xl flex items-center justify-between cursor-pointer transition">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+                        <div>
+                            <p class="text-xs font-bold text-slate-200">${h.deviceName || h.deviceId}</p>
+                            <p class="text-[10px] font-mono text-slate-400">${h.deviceId}</p>
+                        </div>
+                    </div>
+                    <span class="text-[9px] bg-emerald-950 border border-emerald-500/30 text-emerald-300 px-2 py-0.5 rounded-full">نشط أونلاين</span>
+                </div>
+            `).join('');
+        }
+
+        function selectHost(deviceId) {
+            const targetEl = document.getElementById("target-device-id");
+            if (targetEl) targetEl.value = deviceId;
+            autoSaveInputs();
+            showToast(`تم اختيار الجهاز المضيف: ${deviceId}`, "info");
+            sendRPCCommand('device_info');
+        }
+
+        function connectToSelectedHost() {
+            const targetEl = document.getElementById("target-device-id");
+            const targetId = targetEl ? targetEl.value.trim() : "";
+            if (!targetId) {
+                showToast("يرجى إدخال معرّف الجهاز المضيف المستهدف", "warning");
+                return;
+            }
+
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                showToast("يرجى الاتصال بخادم الإشارات أولاً", "warning");
+                toggleServerConnection();
+                setTimeout(() => createWebRTCOffer(targetId), 1500);
+                return;
+            }
+
+            createWebRTCOffer(targetId);
+        }
+
+        function createWebRTCOffer(targetId) {
+            initPeerConnection(targetId);
+
+            dataChannel = pc.createDataChannel("bridgeData", { ordered: true });
+            setupDataChannelEvents();
+
+            pc.createOffer().then(offer => pc.setLocalDescription(offer))
+            .then(() => {
+                ws.send(JSON.stringify({
+                    type: "offer",
+                    from: myDeviceId,
+                    to: targetId,
+                    sdp: pc.localDescription.sdp,
+                    sdpType: "OFFER"
+                }));
+                showToast("تم إرسال عرض WebRTC للهاتف المضيف...", "info");
+            }).catch(err => {
+                showToast("فشل إنشاء عرض WebRTC: " + err.message, "error");
+            });
+        }
+
+        function initPeerConnection(targetId) {
+            if (pc) pc.close();
+
+            const rtcConfig = {
+                iceServers: [
+                    { urls: appConfig.stunServer || DEFAULT_CONFIG.stunServer },
+                    { urls: "stun:stun1.l.google.com:19302" },
+                    { urls: "stun:stun2.l.google.com:19302" },
+                    { urls: "stun:stun3.l.google.com:19302" },
+                    { urls: "stun:stun4.l.google.com:19302" }
+                ]
+            };
+
+            pc = new RTCPeerConnection(rtcConfig);
+
+            try {
+                pc.addTransceiver('video', { direction: 'recvonly' });
+                pc.addTransceiver('audio', { direction: 'recvonly' });
+            } catch (e) {
+                console.warn("Transceivers error:", e);
+            }
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: "ice",
+                        from: myDeviceId,
+                        to: targetId,
+                        sdp: event.candidate.candidate,
+                        sdpMid: event.candidate.sdpMid,
+                        sdpMLineIndex: event.candidate.sdpMLineIndex
+                    }));
+                }
+            };
+
+            pc.ontrack = (event) => {
+                const videoEl = document.getElementById("remote-video");
+                const audioEl = document.getElementById("remote-audio");
+                if (event.track.kind === 'video' && videoEl && event.streams && event.streams[0]) {
+                    videoEl.srcObject = event.streams[0];
+                    showToast("تم استقبال بث الفيديو الحي بنجاح!", "success");
+                } else if (event.track.kind === 'audio' && event.streams && event.streams[0]) {
+                    if (audioEl) audioEl.srcObject = event.streams[0];
+                    showToast("تم استقبال الصوت الحي من الميكروفون!", "success");
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === "connected") {
+                    showToast("اتصال WebRTC P2P مباشر جاهز تماماً!", "success");
+                }
+            };
+        }
+
+        function handleRemoteAnswer(msg) {
+            if (pc) {
+                pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: msg.sdp }))
+                .then(() => showToast("تمت المصافحة وتأكيد القناة المباشرة!", "success"));
+            }
+        }
+
+        function handleRemoteCandidate(msg) {
+            if (pc && msg.sdp) {
+                pc.addIceCandidate(new RTCIceCandidate({
+                    candidate: msg.sdp,
+                    sdpMid: msg.sdpMid,
+                    sdpMLineIndex: msg.sdpMLineIndex
+                })).catch(e => console.error("Error adding ICE candidate:", e));
+            }
+        }
+
+        function setupDataChannelEvents() {
+            if (!dataChannel) return;
+            dataChannel.onopen = () => showToast("قناة البيانات المباشرة مفتوحة ومستعدة للتبادل", "success");
+            dataChannel.onmessage = (event) => {
+                try {
+                    const resp = JSON.parse(event.data);
+                    handleRPCResponse(resp);
+                } catch (e) {
+                    showToast("تم استقبال بيانات غير متزامنة من الهاتف", "info");
+                }
+            };
+        }
+
+        function sendRPCCommand(command, params = null) {
+            const reqId = Math.floor(Math.random() * 100000);
+            const req = { id: reqId, cmd: command, params: params };
+
+            if (dataChannel && dataChannel.readyState === "open") {
+                dataChannel.send(JSON.stringify(req));
+                showToast(`تم إرسال الأمر عبر P2P: ${command}`, "info");
+            } else if (ws && ws.readyState === WebSocket.OPEN) {
+                const targetId = appConfig.targetDeviceId;
+                if (!targetId) {
+                    showToast("يرجى اختيار وتحديد الجهاز المضيف المستهدف أولاً", "warning");
+                    return;
+                }
+                ws.send(JSON.stringify({
+                    type: "rpc_request",
+                    from: myDeviceId,
+                    to: targetId,
+                    requestId: reqId,
+                    cmd: command,
+                    params: params
+                }));
+                showToast(`تم إرسال الطلب [${command}] عبر الخادم للمضيف`, "info");
+            } else {
+                showToast("يرجى الاتصال بخادم الإشارات أولاً", "warning");
+            }
+        }
+
+        function handleRPCResponse(resp) {
+            if (!resp.ok) {
+                showToast("رد المضيف: " + (resp.error || "خطأ غير معروف"), "warning");
+                return;
+            }
+            const data = resp.data;
+            if (!data) return;
+
+            // 1) DEVICE_INFO Response
+            if (data.deviceName || data.batteryLevel !== undefined) {
+                updateDashboardCards(data);
+                showToast("تم جلب وقراءة بيانات الهاتف المضيف الحية بنجاح!", "success");
+                return;
+            }
+
+            // 2) Items array responses
+            if (data.items && Array.isArray(data.items)) {
+                if (activeTab === 'files') {
+                    filesData = data.items;
+                    if (data.currentPath) currentExplorerPath = data.currentPath;
+                    applyFilesFilterAndSort();
+                } else if (activeTab === 'contacts') {
+                    contactsData = data.items;
+                    applyContactsFilterAndSort();
+                } else if (activeTab === 'sms') {
+                    smsData = data.items;
+                    applySmsFilterAndSort();
+                } else if (activeTab === 'calls') {
+                    callsData = data.items;
+                    applyCallFilters();
+                } else if (activeTab === 'notifications') {
+                    notificationsData = data.items;
+                    applyNotifFilters();
+                }
+                showToast("تم تحديث البيانات والقوائم الحية بنجاح!", "success");
+                return;
+            }
+
+            // 3) Streaming Responses
+            if (data.started !== undefined || data.stopped !== undefined || data.switched !== undefined || data.audioEnabled !== undefined) {
+                if (data.started) {
+                    streamState.active = true;
+                    if (data.mode === 'audio') {
+                        streamState.audioOnly = true;
+                        showToast("تم بدء واستقبال بث الصوت الحي (الميكروفون)!", "success");
+                    } else {
+                        streamState.audioOnly = false;
+                        showToast("تم بدء واستقبال بث الكاميرا المباشر!", "success");
+                    }
+                } else if (data.stopped) {
+                    streamState.active = false;
+                    streamState.audioOnly = false;
+                    showToast("تم إيقاف البث الحي", "info");
+                }
+                if (data.isFront !== undefined) streamState.isFront = data.isFront;
+                if (data.audioEnabled !== undefined) streamState.audioEnabled = data.audioEnabled;
+                renderCameraStreamView();
+            }
+        }
+
+        function updateDashboardCards(data) {
+            const batteryEl = document.getElementById("dash-battery");
+            const storageEl = document.getElementById("dash-storage");
+            const osEl = document.getElementById("dash-os");
+
+            if (batteryEl) {
+                const chargingText = data.isCharging ? " (جارٍ الشحن ⚡)" : " (على البطارية)";
+                batteryEl.innerText = `${data.batteryLevel}%${chargingText}`;
+            }
+            if (storageEl) {
+                const freeGb = (data.storageFreeBytes / 1073741824).toFixed(1);
+                const totalGb = (data.storageTotalBytes / 1073741824).toFixed(0);
+                storageEl.innerText = `${freeGb} GB / ${totalGb} GB`;
+            }
+            if (osEl) {
+                osEl.innerText = `Android ${data.androidVersion} (API ${data.sdkInt})`;
+            }
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            activeTab = tab;
+
+            // Desktop tab highlights
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-emerald-600/20', 'text-emerald-400', 'font-bold');
+                btn.classList.add('text-slate-300');
+            });
+
+            // Mobile tab highlights
+            document.querySelectorAll('.tab-btn-mobile').forEach(btn => {
+                btn.classList.remove('bg-emerald-600/20', 'text-emerald-400', 'border', 'border-emerald-500/30', 'font-bold');
+                btn.classList.add('bg-slate-800/60', 'text-slate-300', 'font-medium');
+            });
+
+            const panel = document.getElementById("panel-content");
+            if (tab === 'dashboard') {
+                panel.innerHTML = renderDashboardView();
+                sendRPCCommand('device_info');
+            } else if (tab === 'files') {
+                renderFilesExplorerView();
+                sendRPCCommand('storage_explore', { path: currentExplorerPath });
+            } else if (tab === 'camera') {
+                renderCameraStreamView();
+            } else if (tab === 'contacts') {
+                renderContactsListView();
+                sendRPCCommand('contacts_list');
+            } else if (tab === 'sms') {
+                renderSmsListView();
+                sendRPCCommand('sms_list');
+            } else if (tab === 'calls') {
+                renderCallsListView();
+                sendRPCCommand('calls_list');
+            } else if (tab === 'notifications') {
+                renderNotificationsListView();
+                sendRPCCommand('notifications_list');
+            } else if (tab === 'settings') {
+                panel.innerHTML = renderSettingsView();
+            }
+        }
+
+        // View 1: Dashboard View
+        function renderDashboardView() {
+            return `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 mb-3 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-2xl font-black text-emerald-300">📊 لوحة متابعة الهاتف البعيد</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">مراقبة حالة الجهاز والأذونات والخدمات الحية</p>
+                    </div>
+                    <button onclick="sendRPCCommand('device_info')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3.5 py-1.5 rounded-xl font-bold transition flex items-center gap-1 shadow-md">
+                        <span>تحديث البيانات</span> 🔄
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 md:gap-4 mb-4">
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-xl">🔋</div>
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-medium">حالة البطارية</p>
+                            <p id="dash-battery" class="text-sm md:text-base font-bold text-slate-100">88% (جارٍ الشحن)</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-xl">💾</div>
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-medium">المساحة المتوفرة</p>
+                            <p id="dash-storage" class="text-sm md:text-base font-bold text-slate-100">42.5 GB / 256 GB</p>
+                        </div>
+                    </div>
+                    <div class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-xl">📱</div>
+                        <div>
+                            <p class="text-[11px] text-slate-400 font-medium">نظام التشغيل</p>
+                            <p id="dash-os" class="text-sm md:text-base font-bold text-slate-100">Android 13 (API 33)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2.5">الأقسام السريعة</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-4 mb-4">
+                    <div onclick="switchTab('files')" class="p-3 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 rounded-2xl cursor-pointer transition text-center group">
+                        <div class="text-2xl mb-1 group-hover:scale-110 transition transform">📁</div>
+                        <p class="text-xs font-bold text-slate-200">مستكشف الملفات</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">تصفح الذاكرة</p>
+                    </div>
+                    <div onclick="switchTab('camera')" class="p-3 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 rounded-2xl cursor-pointer transition text-center group">
+                        <div class="text-2xl mb-1 group-hover:scale-110 transition transform">📹</div>
+                        <p class="text-xs font-bold text-slate-200">البث المباشر</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">كاميرا ومايك</p>
+                    </div>
+                    <div onclick="switchTab('contacts')" class="p-3 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 rounded-2xl cursor-pointer transition text-center group">
+                        <div class="text-2xl mb-1 group-hover:scale-110 transition transform">📇</div>
+                        <p class="text-xs font-bold text-slate-200">جهات الاتصال</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">الأرقام والمكالمات</p>
+                    </div>
+                    <div onclick="switchTab('notifications')" class="p-3 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 rounded-2xl cursor-pointer transition text-center group">
+                        <div class="text-2xl mb-1 group-hover:scale-110 transition transform">🔔</div>
+                        <p class="text-xs font-bold text-slate-200">الإشعارات الحية</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5">إشعارات التطبيقات</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-3.5 rounded-xl border border-slate-800 mt-auto">
+                    <h4 class="text-xs font-bold text-emerald-400 mb-1.5">🛡️ حالة أذونات الهاتف المضيف</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px]">
+                        <span class="bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-2 py-1 rounded-lg">✅ إذن الإشعارات</span>
+                        <span class="bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-2 py-1 rounded-lg">✅ استثناء البطارية</span>
+                        <span class="bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-2 py-1 rounded-lg">✅ الكاميرا والمايك</span>
+                        <span class="bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 px-2 py-1 rounded-lg">✅ ذاكرة الجهاز</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // View 2: File Explorer View with Thumbnails & Single/Bulk Selection
+        let fileSearchQuery = "";
+        let fileTypeFilter = "all";
+        let fileSortBy = "name";
+        let fileSortAsc = true;
+
+        function renderFilesExplorerView() {
+            const panel = document.getElementById("panel-content");
+            panel.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300">📁 مستكشف ملفات وذاكرة الهاتف</h2>
+                        <p class="text-xs text-slate-400">معاينة صور مصغرة وتحديد فردي/الكل وتنزيل أرشيف ZIP</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="sendRPCCommand('storage_explore', { path: currentExplorerPath }); showToast('جاري طلب جلب قائمة الملفات الحية...', 'info');" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                            <span>جلب الحية 🔄</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Breadcrumb Path Bar -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 mb-2.5 flex items-center justify-between text-xs font-mono text-emerald-400">
+                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                        <span class="text-slate-400 font-bold">المسار:</span>
+                        <span>${currentExplorerPath}</span>
+                    </div>
+                    ${currentExplorerPath !== '/' ? `
+                        <button onclick="currentExplorerPath = '/'; renderFilesExplorerView();" class="text-[10px] text-amber-400 hover:underline">الرئيسية 🏠</button>
+                    ` : ''}
+                </div>
+
+                <!-- Single / Bulk Selection Bar -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-2.5 mb-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2">
+                        <label class="flex items-center gap-1.5 font-bold text-slate-200 cursor-pointer">
+                            <input type="checkbox" id="files-select-all" onchange="toggleSelectAllFiles(this.checked)" class="w-4 h-4 accent-emerald-500 rounded">
+                            <span>تحديد الكل</span>
+                        </label>
+                        <span class="text-[11px] text-emerald-400 font-mono" id="files-selected-count">(0 محدد)</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="downloadSelectedFilesZip()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1 rounded-lg font-bold transition flex items-center gap-1">
+                            <span>📦 تنزيل المحدّد (ZIP)</span>
+                        </button>
+                        <button onclick="clearFilesSelection()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded-lg font-medium transition">
+                            إلغاء التحديد
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 mb-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <input type="text" id="file-search-input" value="${fileSearchQuery}" oninput="updateFileFilters()" placeholder="بحث بالاسم..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <select id="file-type-select" onchange="updateFileFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="all" ${fileTypeFilter === 'all' ? 'selected' : ''}>كافة الأنواع</option>
+                            <option value="folder" ${fileTypeFilter === 'folder' ? 'selected' : ''}>📁 مجلدات</option>
+                            <option value="image" ${fileTypeFilter === 'image' ? 'selected' : ''}>🖼️ صور</option>
+                            <option value="video" ${fileTypeFilter === 'video' ? 'selected' : ''}>🎬 فيديو</option>
+                            <option value="document" ${fileTypeFilter === 'document' ? 'selected' : ''}>📄 مستندات</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="file-sort-select" onchange="updateFileFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="name" ${fileSortBy === 'name' ? 'selected' : ''}>الاسم</option>
+                            <option value="size" ${fileSortBy === 'size' ? 'selected' : ''}>الحجم</option>
+                            <option value="date" ${fileSortBy === 'date' ? 'selected' : ''}>التاريخ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="toggleFileSortDirection()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-1 px-2 rounded-lg font-bold transition text-[11px]">
+                            ${fileSortAsc ? 'تصاعدي ⬆️' : 'تنازلي ⬇️'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Files List Container -->
+                <div id="files-list-container" class="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <!-- Populated by applyFilesFilterAndSort -->
+                </div>
+            `;
+            applyFilesFilterAndSort();
+        }
+
+        function updateFileFilters() {
+            const searchEl = document.getElementById("file-search-input");
+            const typeEl = document.getElementById("file-type-select");
+            const sortEl = document.getElementById("file-sort-select");
+
+            if (searchEl) fileSearchQuery = searchEl.value.trim().toLowerCase();
+            if (typeEl) fileTypeFilter = typeEl.value;
+            if (sortEl) fileSortBy = sortEl.value;
+            applyFilesFilterAndSort();
+        }
+
+        function toggleFileSortDirection() {
+            fileSortAsc = !fileSortAsc;
+            renderFilesExplorerView();
+        }
+
+        function toggleSelectAllFiles(checked) {
+            selectedFileIds.clear();
+            if (checked) {
+                filesData.forEach(f => selectedFileIds.add(f.id));
+            }
+            applyFilesFilterAndSort();
+        }
+
+        function toggleFileSelection(id, checked) {
+            if (checked) selectedFileIds.add(id);
+            else selectedFileIds.delete(id);
+
+            const countEl = document.getElementById("files-selected-count");
+            if (countEl) countEl.innerText = `(${selectedFileIds.size} محدد)`;
+        }
+
+        function clearFilesSelection() {
+            selectedFileIds.clear();
+            const selectAllEl = document.getElementById("files-select-all");
+            if (selectAllEl) selectAllEl.checked = false;
+            applyFilesFilterAndSort();
+        }
+
+        function downloadSelectedFilesZip() {
+            if (selectedFileIds.size === 0) {
+                showToast("يرجى تحديد ملف أو عدة ملفات أولاً لتنزيل أرشيف ZIP", "warning");
+                return;
+            }
+            showToast(`جارٍ تجميع وتنسيق الأرشيف المضغوط (ZIP) لـ ${selectedFileIds.size} ملف...`, "success");
+        }
+
+        function applyFilesFilterAndSort() {
+            const container = document.getElementById("files-list-container");
+            if (!container) return;
+
+            const countEl = document.getElementById("files-selected-count");
+            if (countEl) countEl.innerText = `(${selectedFileIds.size} محدد)`;
+
+            if (filesData.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                        <div class="text-3xl mb-2">📁</div>
+                        <p class="font-bold text-slate-300 text-sm">المجلد فارغ لا يضم أي ملفات افتراضية</p>
+                        <p class="text-slate-500 mt-1">قم بربط الهاتف المضيف والضغط على "جلب الحية 🔄" لقراءة ملفات وذاكرة الهاتف المباشرة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = filesData.filter(f => {
+                const matchesSearch = f.name.toLowerCase().includes(fileSearchQuery);
+                let matchesType = true;
+                if (fileTypeFilter === 'folder') matchesType = f.isDir;
+                else if (fileTypeFilter === 'image') matchesType = f.mimeType && f.mimeType.startsWith('image/');
+                else if (fileTypeFilter === 'video') matchesType = f.mimeType && f.mimeType.startsWith('video/');
+                else if (fileTypeFilter === 'audio') matchesType = f.mimeType && f.mimeType.startsWith('audio/');
+                else if (fileTypeFilter === 'document') matchesType = f.mimeType && (f.mimeType.includes('pdf') || f.mimeType.includes('doc') || f.mimeType.includes('zip'));
+                return matchesSearch && matchesType;
+            });
+
+            filtered.sort((a, b) => {
+                let comparison = 0;
+                if (fileSortBy === 'name') comparison = a.name.localeCompare(b.name, 'ar');
+                else if (fileSortBy === 'size') comparison = a.size - b.size;
+                else if (fileSortBy === 'date') comparison = a.dateAdded - b.dateAdded;
+                return fileSortAsc ? comparison : -comparison;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد ملفات تطابق نتائج البحث المحددة.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(f => {
+                const isSelected = selectedFileIds.has(f.id);
+                const isImage = f.mimeType && f.mimeType.startsWith('image/');
+                const isVideo = f.mimeType && f.mimeType.startsWith('video/');
+                const icon = f.isDir ? '📁' : isImage ? '🖼️' : isVideo ? '🎬' : '📄';
+                const formattedSize = f.isDir ? 'مجلد' : (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : (f.size / 1024).toFixed(1) + ' KB');
+                const formattedDate = new Date(f.dateAdded).toLocaleDateString('ar-SA');
+
+                return `
+                    <div class="p-2.5 bg-slate-900/80 hover:bg-slate-800/80 border ${isSelected ? 'border-emerald-500/80 bg-emerald-950/20' : 'border-slate-800'} rounded-xl flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleFileSelection(${f.id}, this.checked)" class="w-4 h-4 accent-emerald-500 rounded shrink-0">
+                            
+                            <!-- Thumbnail Preview Box for Photos & Videos -->
+                            ${isImage ? `
+                                <div onclick="openModal('${f.name}', 'https://picsum.photos/600/400?random=${f.id}')" class="w-10 h-10 bg-slate-950 rounded-lg border border-slate-700/80 overflow-hidden shrink-0 cursor-pointer hover:border-emerald-400 transition">
+                                    <img src="https://picsum.photos/100/100?random=${f.id}" class="w-full h-full object-cover">
+                                </div>
+                            ` : `
+                                <span class="text-xl shrink-0">${icon}</span>
+                            `}
+
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-200 truncate">${f.name}</p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">${formattedSize} • ${formattedDate}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            ${isImage ? `
+                                <button onclick="openModal('${f.name}', 'https://picsum.photos/800/600?random=${f.id}')" class="bg-slate-800 text-slate-200 border border-slate-700 px-2 py-1 rounded-lg text-[10px] font-bold">
+                                    معاينة 🔍
+                                </button>
+                            ` : ''}
+                            ${!f.isDir ? `
+                                <button onclick="showToast('جارٍ تحميل ${f.name}...', 'info')" class="bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">
+                                    تنزيل ⬇️
+                                </button>
+                            ` : `
+                                <button onclick="currentExplorerPath += '${f.name}/'; renderFilesExplorerView();" class="bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">
+                                    فتح 📂
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View 3: Live Camera, Screen & Microphone Streaming View
+        function renderCameraStreamView() {
+            const panel = document.getElementById("panel-content");
+            
+            const isCamActive = streamState.active && streamState.mode === 'camera';
+            const isAudioActive = streamState.active && streamState.mode === 'audio';
+            const isScreenActive = streamState.active && streamState.mode === 'screen';
+
+            panel.innerHTML = `
+                <audio id="remote-audio" autoplay class="hidden"></audio>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300 flex items-center gap-2">
+                            <span>📡 البث الحي المباشر (شاشة، كاميرا، مايك)</span>
+                        </h2>
+                        <p class="text-xs text-slate-400">بث شاشة الجوال المباشرة، الكاميرا، أو الميكروفون المباشر عبر WebRTC</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1.5 transition-all duration-300 ${streamState.active ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 shadow-lg shadow-emerald-900/40 animate-pulse' : 'bg-slate-900/80 text-rose-400 border border-rose-500/30'}">
+                            <span class="w-2.5 h-2.5 rounded-full ${streamState.active ? 'bg-emerald-400' : 'bg-rose-500'}"></span>
+                            ${streamState.active ? (isScreenActive ? 'بث الشاشة الحية نشط 🖥️' : isAudioActive ? 'بث الصوت الحي نشط 🎙️' : 'بث الكاميرا نشط 🎥') : 'البث الحي متوقف 🛑'}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Video / Screen / Audio Display Window -->
+                <div class="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden relative aspect-video max-h-[340px] flex items-center justify-center mb-3 shadow-2xl transition-all">
+                    <video id="remote-video" autoplay playsinline class="w-full h-full object-contain ${streamState.active && !isAudioActive ? '' : 'hidden'}"></video>
+                    
+                    <!-- Audio-Only Visualizer Placeholder -->
+                    ${isAudioActive ? `
+                        <div class="text-center p-6 flex flex-col items-center justify-center gap-3">
+                            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl animate-bounce shadow-lg shadow-emerald-900/30">🎙️</div>
+                            <p class="text-sm font-bold text-emerald-300">جارٍ استقبال بث الصوت الحي من الميكروفون المباشر...</p>
+                            <div class="flex items-center gap-1.5 h-9 mt-1">
+                                <div class="w-2 bg-emerald-400 rounded-full h-full animate-pulse"></div>
+                                <div class="w-2 bg-emerald-500 rounded-full h-2/3 animate-pulse delay-75"></div>
+                                <div class="w-2 bg-emerald-300 rounded-full h-4/5 animate-pulse delay-150"></div>
+                                <div class="w-2 bg-emerald-400 rounded-full h-full animate-pulse delay-100"></div>
+                                <div class="w-2 bg-emerald-500 rounded-full h-1/2 animate-pulse delay-200"></div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div id="video-placeholder" class="text-center p-4 ${streamState.active && !isAudioActive ? 'hidden' : 'block'}">
+                            <div class="w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl mx-auto mb-2">📹</div>
+                            <p class="text-xs md:text-sm font-bold text-slate-300">شاشة العرض المباشر مستعدة</p>
+                            <p class="text-[11px] text-slate-500 mt-1">اختر نوع البث المرغوب: بث شاشة الجوال، الكاميرا والصوت معاً، أو بث الميكروفون فقط</p>
+                        </div>
+                    `}
+
+                    <div class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur border border-slate-800 text-[10px] px-2.5 py-0.5 rounded-lg font-mono text-emerald-300 flex items-center gap-1.5">
+                        <span>FPS: 30</span>
+                        <span>•</span>
+                        <span>${isScreenActive ? 'SCREEN 1080p' : isAudioActive ? 'AUDIO ONLY' : 'CAM 720p'}</span>
+                    </div>
+                </div>
+
+                <!-- Controls Row with Dynamic Color Transition -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs shadow-xl">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Screen Stream Toggle Button -->
+                        <button onclick="toggleScreenStream()" class="px-3.5 py-2 rounded-xl font-bold transition-all duration-300 flex items-center gap-1.5 shadow-md active:scale-95 ${isScreenActive ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 shadow-emerald-950/60 ring-2 ring-emerald-500/50' : 'bg-slate-800 hover:bg-emerald-600/30 text-slate-200 border border-slate-700'}">
+                            <span>🖥️ بث الشاشة</span>
+                        </button>
+
+                        <!-- Camera Stream Toggle Button -->
+                        <button onclick="toggleLiveCameraStream()" class="px-3.5 py-2 rounded-xl font-bold transition-all duration-300 flex items-center gap-1.5 shadow-md active:scale-95 ${isCamActive ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 shadow-emerald-950/60 ring-2 ring-emerald-500/50' : 'bg-slate-800 hover:bg-emerald-600/30 text-slate-200 border border-slate-700'}">
+                            <span>📷 بث الكاميرا</span>
+                        </button>
+
+                        <!-- Audio Stream Toggle Button -->
+                        <button onclick="startAudioOnlyStream()" class="px-3.5 py-2 rounded-xl font-bold transition-all duration-300 flex items-center gap-1.5 shadow-md active:scale-95 ${isAudioActive ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400 shadow-emerald-950/60 ring-2 ring-emerald-500/50' : 'bg-slate-800 hover:bg-blue-600/30 text-slate-200 border border-slate-700'}">
+                            <span>🎙️ بث الميكروفون فقط</span>
+                        </button>
+
+                        ${isCamActive ? `
+                            <button onclick="switchLiveCameraLens()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl font-bold transition border border-slate-700">
+                                🔄 ${streamState.isFront ? 'كاميرا أماميّة' : 'كاميرا خلفيّة'}
+                            </button>
+                        ` : ''}
+
+                        <button onclick="toggleLiveAudio()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl font-bold transition border border-slate-700">
+                            ${streamState.audioEnabled ? '🔊 المايك: مفعّل' : '🔇 مكتوم'}
+                        </button>
+                    </div>
+
+                    ${streamState.active ? `
+                        <button onclick="stopLiveStream()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl transition shadow-lg shadow-rose-950/50 active:scale-95 flex items-center gap-1">
+                            <span>🛑 إيقاف البث الحي</span>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function toggleScreenStream() {
+            if (streamState.active && streamState.mode === 'screen') {
+                stopLiveStream();
+                return;
+            }
+            sendRPCCommand('start_screen_stream');
+            showToast("تم إرسال طلب بدء بث شاشة الجوال المباشرة...", "info");
+        }
+
+        function toggleLiveCameraStream() {
+            if (streamState.active && streamState.mode === 'camera') {
+                stopLiveStream();
+                return;
+            }
+            sendRPCCommand('start_camera_stream', { front: streamState.isFront, audio: streamState.audioEnabled });
+            showToast("تم إرسال أمر بدء بث الكاميرا والصوت للهاتف المضيف", "success");
+        }
+
+        function startAudioOnlyStream() {
+            if (streamState.active && streamState.mode === 'audio') {
+                stopLiveStream();
+                return;
+            }
+            sendRPCCommand('start_audio_stream');
+            showToast("تم إرسال أمر بدء بث الصوت فقط من الميكروفون", "success");
+        }
+
+        function stopLiveStream() {
+            sendRPCCommand('stop_camera_stream');
+            streamState.active = false;
+            streamState.mode = 'none';
+            showToast("تم إيقاف كافة وسائل البث المباشر", "info");
+            renderCameraStreamView();
+        }
+
+        function switchLiveCameraLens() {
+            streamState.isFront = !streamState.isFront;
+            sendRPCCommand('switch_camera');
+            showToast(`تم التبديل إلى الكاميرا: ${streamState.isFront ? 'الأمامية' : 'الخلفية'}`, "info");
+            renderCameraStreamView();
+        }
+
+        function toggleLiveAudio() {
+            streamState.audioEnabled = !streamState.audioEnabled;
+            sendRPCCommand('toggle_audio', { enable: streamState.audioEnabled });
+            showToast(`حالة الميكروفون: ${streamState.audioEnabled ? 'مفعّل' : 'مكتوم'}`, "info");
+            renderCameraStreamView();
+        }
+
+        // View 4: Contacts List View
+        let contactSearchQuery = "";
+        let contactSortBy = "name";
+        let contactSortAsc = true;
+
+        function renderContactsListView() {
+            const panel = document.getElementById("panel-content");
+            panel.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300">📇 الأسماء وجهات الاتصال</h2>
+                        <p class="text-xs text-slate-400">سجل جهات الاتصال الحية المسجلة في الهاتف البعيد</p>
+                    </div>
+                    <button onclick="sendRPCCommand('contacts_list'); showToast('جاري طلب جلب قائمة الأسماء...', 'info');" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <span>جلب الحية 🔄</span>
+                    </button>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 mb-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <input type="text" id="contact-search-input" value="${contactSearchQuery}" oninput="updateContactFilters()" placeholder="ابحث بالاسم أو الرقم..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <select id="contact-sort-select" onchange="updateContactFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="name" ${contactSortBy === 'name' ? 'selected' : ''}>الاسم</option>
+                            <option value="numbers" ${contactSortBy === 'numbers' ? 'selected' : ''}>عدد الأرقام</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="contactSortAsc = !contactSortAsc; renderContactsListView();" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-1 px-2 rounded-lg font-bold transition text-[11px]">
+                            ${contactSortAsc ? 'تصاعدي ⬆️' : 'تنازلي ⬇️'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contacts Cards Container -->
+                <div id="contacts-list-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[350px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <!-- Populated by applyContactsFilterAndSort -->
+                </div>
+            `;
+            applyContactsFilterAndSort();
+        }
+
+        function updateContactFilters() {
+            const searchEl = document.getElementById("contact-search-input");
+            const sortEl = document.getElementById("contact-sort-select");
+
+            if (searchEl) contactSearchQuery = searchEl.value.trim().toLowerCase();
+            if (sortEl) contactSortBy = sortEl.value;
+            applyContactsFilterAndSort();
+        }
+
+        function applyContactsFilterAndSort() {
+            const container = document.getElementById("contacts-list-container");
+            if (!container) return;
+
+            if (contactsData.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-2 p-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                        <div class="text-3xl mb-2">📇</div>
+                        <p class="font-bold text-slate-300 text-sm">القائمة خالية تماماً من البيانات الافتراضية</p>
+                        <p class="text-slate-500 mt-1">اضغط على زر "جلب الحية 🔄" لجلب جهات اتصال الهاتف المضيف الحقيقية</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = contactsData.filter(c => {
+                const matchesName = c.displayName.toLowerCase().includes(contactSearchQuery);
+                const matchesPhone = c.phoneNumbers && c.phoneNumbers.some(p => p.includes(contactSearchQuery));
+                return matchesName || matchesPhone;
+            });
+
+            filtered.sort((a, b) => {
+                let comp = 0;
+                if (contactSortBy === 'name') comp = a.displayName.localeCompare(b.displayName, 'ar');
+                else if (contactSortBy === 'numbers') comp = (a.phoneNumbers ? a.phoneNumbers.length : 0) - (b.phoneNumbers ? b.phoneNumbers.length : 0);
+                return contactSortAsc ? comp : -comp;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="col-span-2 p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد جهات اتصال مطابقة للبحث.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => `
+                <div class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 rounded-xl flex items-start gap-2.5 transition">
+                    <div class="w-9 h-9 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-300 font-bold text-xs shrink-0">
+                        ${c.displayName ? c.displayName.charAt(0) : '?'}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-bold text-slate-100 truncate">${c.displayName}</p>
+                        <div class="mt-1 space-y-0.5">
+                            ${c.phoneNumbers ? c.phoneNumbers.map(p => `
+                                <div class="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                                    <span>${p}</span>
+                                    <button onclick="navigator.clipboard.writeText('${p}'); showToast('تم نسخ الرقم: ${p}', 'info');" class="text-emerald-400 hover:text-emerald-300 text-[10px]">نسخ 📋</button>
+                                </div>
+                            `).join('') : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // View 5: SMS Messages List View
+        let smsSearchQuery = "";
+        let smsFilterType = "all";
+        let smsSortBy = "date";
+        let smsSortAsc = false;
+
+        function renderSmsListView() {
+            const panel = document.getElementById("panel-content");
+            panel.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300">💬 الرسائل القصيرة (SMS)</h2>
+                        <p class="text-xs text-slate-400">صندوق الرسائل الواردة والصادرة الحية من الهاتف</p>
+                    </div>
+                    <button onclick="sendRPCCommand('sms_list'); showToast('جاري طلب جلب قائمة الرسائل النصية...', 'info');" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <span>جلب الحية 🔄</span>
+                    </button>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 mb-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <input type="text" id="sms-search-input" value="${smsSearchQuery}" oninput="updateSmsFilters()" placeholder="بحث بالنص..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <select id="sms-type-select" onchange="updateSmsFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="all" ${smsFilterType === 'all' ? 'selected' : ''}>كافة الرسائل</option>
+                            <option value="incoming" ${smsFilterType === 'incoming' ? 'selected' : ''}>📩 واردة</option>
+                            <option value="outgoing" ${smsFilterType === 'outgoing' ? 'selected' : ''}>📤 صادرة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="sms-sort-select" onchange="updateSmsFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="date" ${smsSortBy === 'date' ? 'selected' : ''}>التاريخ</option>
+                            <option value="sender" ${smsSortBy === 'sender' ? 'selected' : ''}>المرسل</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="smsSortAsc = !smsSortAsc; renderSmsListView();" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-1 px-2 rounded-lg font-bold transition text-[11px]">
+                            ${smsSortAsc ? 'الأقدم أولاً ⬆️' : 'الأحدث أولاً ⬇️'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Messages List -->
+                <div id="sms-list-container" class="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <!-- Populated by applySmsFilterAndSort -->
+                </div>
+            `;
+            applySmsFilterAndSort();
+        }
+
+        function updateSmsFilters() {
+            const searchEl = document.getElementById("sms-search-input");
+            const typeEl = document.getElementById("sms-type-select");
+            const sortEl = document.getElementById("sms-sort-select");
+
+            if (searchEl) smsSearchQuery = searchEl.value.trim().toLowerCase();
+            if (typeEl) smsFilterType = typeEl.value;
+            if (sortEl) smsSortBy = sortEl.value;
+            applySmsFilterAndSort();
+        }
+
+        function applySmsFilterAndSort() {
+            const container = document.getElementById("sms-list-container");
+            if (!container) return;
+
+            if (smsData.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                        <div class="text-3xl mb-2">💬</div>
+                        <p class="font-bold text-slate-300 text-sm">صندوق الرسائل خالي حالياً</p>
+                        <p class="text-slate-500 mt-1">قم بالاتصال بالهاتف المضيف والضغط على "جلب الحية 🔄" لمزامنة الرسائل</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = smsData.filter(s => {
+                const matchesSearch = s.body.toLowerCase().includes(smsSearchQuery) || s.address.includes(smsSearchQuery) || (s.contactName && s.contactName.toLowerCase().includes(smsSearchQuery));
+                let matchesType = true;
+                if (smsFilterType === 'incoming') matchesType = s.type === 1;
+                else if (smsFilterType === 'outgoing') matchesType = s.type === 2;
+                return matchesSearch && matchesType;
+            });
+
+            filtered.sort((a, b) => {
+                let comp = 0;
+                if (smsSortBy === 'date') comp = a.date - b.date;
+                else if (smsSortBy === 'sender') comp = a.address.localeCompare(b.address);
+                return smsSortAsc ? comp : -comp;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد رسائل مطابقة.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(s => {
+                const isIncoming = s.type === 1;
+                const dateStr = new Date(s.date).toLocaleString('ar-SA');
+                return `
+                    <div class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 rounded-xl transition">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${isIncoming ? 'bg-emerald-950 border border-emerald-500/30 text-emerald-300' : 'bg-blue-950 border border-blue-500/30 text-blue-300'}">
+                                    ${isIncoming ? '📩 واردة' : '📤 صادرة'}
+                                </span>
+                                <span class="text-xs font-bold text-slate-200">${s.contactName || s.address}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500">${dateStr}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed bg-slate-950/40 p-2 rounded-lg border border-slate-800/60">${s.body}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View 6: Call Logs View
+        let callSearchQuery = "";
+        let callTypeFilter = "all";
+        let callSortBy = "date";
+        let callSortAsc = false;
+
+        function renderCallsListView() {
+            const panel = document.getElementById("panel-content");
+            panel.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300">📞 سجل المكالمات</h2>
+                        <p class="text-xs text-slate-400">سجل المكالمات الواردة والصادرة والفائتة الحية</p>
+                    </div>
+                    <button onclick="sendRPCCommand('calls_list'); showToast('جاري طلب جلب سجل المكالمات...', 'info');" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <span>جلب الحية 🔄</span>
+                    </button>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 mb-2.5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div>
+                        <input type="text" id="call-search-input" value="${callSearchQuery}" oninput="updateCallFilters()" placeholder="بحث بالاسم أو الرقم..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <select id="call-type-select" onchange="updateCallFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="all" ${callTypeFilter === 'all' ? 'selected' : ''}>كافة المكالمات</option>
+                            <option value="1" ${callTypeFilter === '1' ? 'selected' : ''}>🟢 واردة</option>
+                            <option value="2" ${callTypeFilter === '2' ? 'selected' : ''}>🔵 صادرة</option>
+                            <option value="3" ${callTypeFilter === '3' ? 'selected' : ''}>🔴 فائتة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="call-sort-select" onchange="updateCallFilters()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                            <option value="date" ${callSortBy === 'date' ? 'selected' : ''}>التاريخ</option>
+                            <option value="duration" ${callSortBy === 'duration' ? 'selected' : ''}>المدة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button onclick="callSortAsc = !callSortAsc; renderCallsListView();" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-1 px-2 rounded-lg font-bold transition text-[11px]">
+                            ${callSortAsc ? 'الأقدم أولاً ⬆️' : 'الأحدث أولاً ⬇️'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Call Logs List -->
+                <div id="calls-list-container" class="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <!-- Populated by applyCallFilters -->
+                </div>
+            `;
+            applyCallFilters();
+        }
+
+        function updateCallFilters() {
+            const searchEl = document.getElementById("call-search-input");
+            const typeEl = document.getElementById("call-type-select");
+            const sortEl = document.getElementById("call-sort-select");
+
+            if (searchEl) callSearchQuery = searchEl.value.trim().toLowerCase();
+            if (typeEl) callTypeFilter = typeEl.value;
+            if (sortEl) callSortBy = sortEl.value;
+            applyCallFilters();
+        }
+
+        function applyCallFilters() {
+            const container = document.getElementById("calls-list-container");
+            if (!container) return;
+
+            if (callsData.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                        <div class="text-3xl mb-2">📞</div>
+                        <p class="font-bold text-slate-300 text-sm">سجل المكالمات فارغ لا يحتوي بيانات افتراضية</p>
+                        <p class="text-slate-500 mt-1">اضغط على "جلب الحية 🔄" لقراءة سجلات المكالمات الفعلية من الهاتف</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = callsData.filter(c => {
+                const matchesSearch = c.number.includes(callSearchQuery) || (c.name && c.name.toLowerCase().includes(callSearchQuery));
+                let matchesType = true;
+                if (callTypeFilter !== 'all') matchesType = c.type.toString() === callTypeFilter;
+                return matchesSearch && matchesType;
+            });
+
+            filtered.sort((a, b) => {
+                let comp = 0;
+                if (callSortBy === 'date') comp = a.date - b.date;
+                else if (callSortBy === 'duration') comp = a.durationSec - b.durationSec;
+                return callSortAsc ? comp : -comp;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد مكالمات مطابقة.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(c => {
+                const badge = c.type === 1 ? '🟢 واردة' : c.type === 2 ? '🔵 صادرة' : '🔴 فائتة';
+                const formattedDuration = c.durationSec > 0 ? `${Math.floor(c.durationSec / 60)}د ${c.durationSec % 60}ث` : 'لم يتم الرد';
+                const dateStr = new Date(c.date).toLocaleString('ar-SA');
+
+                return `
+                    <div class="p-2.5 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 rounded-xl flex items-center justify-between transition">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-950 border border-slate-800">${badge}</span>
+                            <div>
+                                <p class="text-xs font-bold text-slate-200">${c.name || c.number}</p>
+                                <p class="text-[10px] font-mono text-slate-400">${dateStr}</p>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">${formattedDuration}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View 7: Notifications List View
+        let notifSearchQuery = "";
+        let notifSortAsc = false;
+
+        function renderNotificationsListView() {
+            const panel = document.getElementById("panel-content");
+            panel.innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-2.5 mb-2.5 border-b border-slate-800 gap-2">
+                    <div>
+                        <h2 class="text-lg md:text-xl font-bold text-emerald-300">🔔 الإشعارات الحية</h2>
+                        <p class="text-xs text-slate-400">مراقبة ورصد إشعارات النظام وتطبيقات الهاتف المضيف الحية</p>
+                    </div>
+                    <button onclick="sendRPCCommand('notifications_list'); showToast('جاري جلب إشعارات المضيف الحية...', 'info');" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                        <span>جلب الحية 🔄</span>
+                    </button>
+                </div>
+
+                <!-- Search Controls -->
+                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 mb-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <input type="text" id="notif-search-input" value="${notifSearchQuery}" oninput="notifSearchQuery = this.value.trim().toLowerCase(); applyNotifFilters();" placeholder="بحث في محتوى الإشعارات..." class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-slate-100 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <button onclick="notifSortAsc = !notifSortAsc; renderNotificationsListView();" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-1 px-2 rounded-lg font-bold transition text-[11px]">
+                            ${notifSortAsc ? 'الأقدم أولاً ⬆️' : 'الأحدث أولاً ⬇️'}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Notifications List -->
+                <div id="notifs-list-container" class="space-y-2 max-h-[350px] overflow-y-auto custom-scrollbar pr-1 flex-1">
+                    <!-- Populated by applyNotifFilters -->
+                </div>
+            `;
+            applyNotifFilters();
+        }
+
+        function applyNotifFilters() {
+            const container = document.getElementById("notifs-list-container");
+            if (!container) return;
+
+            if (notificationsData.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">
+                        <div class="text-3xl mb-2">🔔</div>
+                        <p class="font-bold text-slate-300 text-sm">لا توجد إشعارات مسجلة حالياً</p>
+                        <p class="text-slate-500 mt-1">تأكد من تفعيل إذن المستمع في هاتف المضيف واضغط على "جلب الحية 🔄"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let filtered = notificationsData.filter(n => {
+                return n.title.toLowerCase().includes(notifSearchQuery) || n.text.toLowerCase().includes(notifSearchQuery) || n.packageName.toLowerCase().includes(notifSearchQuery);
+            });
+
+            filtered.sort((a, b) => notifSortAsc ? (a.postTime - b.postTime) : (b.postTime - a.postTime));
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500 bg-slate-900/40 rounded-xl border border-slate-800">لا توجد إشعارات مطابقة.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(n => {
+                const dateStr = new Date(n.postTime).toLocaleTimeString('ar-SA');
+                return `
+                    <div class="p-3 bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 rounded-xl transition">
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-sm">🔔</span>
+                                <p class="text-xs font-bold text-slate-100">${n.title}</p>
+                                <span class="text-[9px] font-mono text-slate-500 bg-slate-950 px-1.5 py-0.5 rounded">${n.packageName}</span>
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-mono">${dateStr}</span>
+                        </div>
+                        <p class="text-xs text-slate-300 leading-relaxed pr-5">${n.text}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // View 8: Settings View
+        function renderSettingsView() {
+            return `
+                <div class="pb-2.5 mb-2.5 border-b border-slate-800">
+                    <h2 class="text-lg md:text-xl font-bold text-emerald-300">⚙️ إعدادات الربط والخيارات السريعة</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">تخصيص عناوين السيرفر وحفظ البيانات تلقائياً</p>
+                </div>
+
+                <div class="space-y-3.5 max-w-xl text-xs">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">عنوان خادم الإشارات (Signaling Server URL):</label>
+                        <input type="text" id="cfg-server-url" oninput="saveWebSettings(true)" value="${appConfig.serverUrl}" placeholder="ws://<Local-IP>:10000/ws أو wss://..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500 transition">
+                        
+                        <div class="grid grid-cols-3 gap-2 mt-2">
+                            <button onclick="setPreset('render')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700/80 px-2 py-1.5 rounded-xl text-purple-300 transition">
+                                ☁️ Render
+                            </button>
+                            <button onclick="setPreset('fly')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700/80 px-2 py-1.5 rounded-xl text-emerald-300 transition">
+                                🌐 Fly.io
+                            </button>
+                            <button onclick="setPreset('local')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 border border-slate-700/80 px-2 py-1.5 rounded-xl text-amber-300 transition">
+                                💻 محلي LAN
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">اسم جهاز الويب (Dashboard Name):</label>
+                        <input type="text" id="cfg-device-name" oninput="saveWebSettings(true)" value="${appConfig.deviceName}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">خادم الـ STUN الخاص بـ WebRTC:</label>
+                        <input type="text" id="cfg-stun" oninput="saveWebSettings(true)" value="${appConfig.stunServer}" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+
+                    <button onclick="saveWebSettings(false)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-xl text-xs transition shadow-md">
+                        💾 حفظ الإعدادات
+                    </button>
+                </div>
+            `;
+        }
+
+        function setPreset(key) {
+            if (PRESETS[key]) {
+                const url = PRESETS[key];
+                const inputEl = document.getElementById("cfg-server-url");
+                if (inputEl) inputEl.value = url;
+                appConfig.serverUrl = url;
+                saveWebSettings(false);
+                showToast(`تم التبديل للسيرفر: ${key.toUpperCase()}`, "success");
+            }
+        }
+
+        function saveWebSettings(silent = false) {
+            const urlInput = document.getElementById("cfg-server-url");
+            const nameInput = document.getElementById("cfg-device-name");
+            const stunInput = document.getElementById("cfg-stun");
+
+            if (urlInput) appConfig.serverUrl = urlInput.value.trim();
+            if (nameInput) appConfig.deviceName = nameInput.value.trim();
+            if (stunInput) appConfig.stunServer = stunInput.value.trim();
+
+            localStorage.setItem('remotebridge_config', JSON.stringify(appConfig));
+            if (!silent) showToast("تم حفظ البيانات في المتصفح بنجاح!", "success");
+        }
+
+        function saveCurrentTargetProfile() {
+            const targetEl = document.getElementById("target-device-id");
+            const targetId = targetEl ? targetEl.value.trim() : "";
+            if (!targetId) return;
+
+            appConfig.targetDeviceId = targetId;
+            localStorage.setItem('remotebridge_config', JSON.stringify(appConfig));
+            showToast(`تم حفظ المعرف الافتراضي: ${targetId}`, "success");
+        }
+
+        function openModal(title, imgUrl) {
+            const titleEl = document.getElementById("modal-title");
+            const imgEl = document.getElementById("modal-img");
+            const dlEl = document.getElementById("modal-download");
+
+            if (titleEl) titleEl.innerText = title;
+            if (imgEl) imgEl.src = imgUrl;
+            if (dlEl) dlEl.href = imgUrl;
+
+            const modalEl = document.getElementById("image-modal");
+            if (modalEl) modalEl.classList.replace("hidden", "flex");
+        }
+
+        function closeModal() {
+            const modalEl = document.getElementById("image-modal");
+            if (modalEl) modalEl.classList.replace("flex", "hidden");
+        }
+    </script>
+</body>
+</html>

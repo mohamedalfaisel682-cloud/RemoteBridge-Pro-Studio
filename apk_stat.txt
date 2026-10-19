@@ -1,0 +1,6 @@
+﻿
+Name          SizeMB Date                 
+----          ------ ----                 
+app-debug.apk   68.1 10/17/2026 5:16:59 PM
+
+

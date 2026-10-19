@@ -1,0 +1,29 @@
+﻿
+Name                  Length LastWriteTime         
+----                  ------ -------------         
+.gradle                      10/15/2026 6:37:12 PM 
+.kotlin                      10/15/2026 6:37:12 PM 
+app                          10/15/2026 6:37:18 PM 
+gradle                       10/15/2026 6:37:18 PM 
+server                       10/15/2026 11:18:37 PM
+web-dashboard                10/15/2026 6:37:18 PM 
+build-and-test.ps1    1264   10/15/2026 6:01:18 PM 
+build.gradle.kts      522    10/14/2026 12:16:54 AM
+build_log.txt         284    10/15/2026 8:30:47 PM 
+BUILD_VERIFICATION.md 288    10/15/2026 6:06:44 PM 
+DEPLOYMENT-GUIDE.md   1945   10/15/2026 6:01:41 PM 
+dir_audit.txt         0      10/17/2026 4:01:05 PM 
+Dockerfile            413    10/16/2026 11:28:25 PM
+fly.toml              372    10/15/2026 6:57:48 PM 
+go.mod                81     10/16/2026 11:26:38 PM
+gradle.properties     259    10/14/2026 12:16:54 AM
+gradlew               6266   10/10/2026 12:42:41 AM
+gradlew.bat           2826   10/10/2026 12:40:19 AM
+local.properties      26     10/14/2026 2:11:24 AM 
+main.go               4266   10/16/2026 11:27:23 PM
+README.md             59     10/15/2026 5:49:09 PM 
+render.yaml           182    10/15/2026 6:56:53 PM 
+run-server.ps1        25     10/15/2026 5:50:03 PM 
+settings.gradle.kts   537    10/14/2026 12:16:54 AM
+
+
